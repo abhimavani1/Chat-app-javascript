@@ -1,0 +1,167 @@
+<html>
+  <head>
+    <title>Chat App</title>
+    <style>
+      body {
+        background: #b6b3b3;
+      }
+      #container {
+        width: 500px;
+        margin: auto;
+        padding: 5%;
+      }
+      #chatWindow {
+        height: 400px;
+        width: 250px;
+        /* overflow-y: scroll; */
+      }
+      #mainWrapper {
+        display: none;
+        margin: auto;
+      }
+      #chatWrapper {
+        float: left;
+        border: 1px rgb(27, 4, 114) solid;
+        border-radius: 10px;
+        background: #635c5c;
+        padding: 10px;
+      }
+      #userWrapper {
+        float: left;
+        float: left;
+        border: 1px rgb(228, 24, 24) solid;
+        border-radius: 10px;
+        background: #c2caeb;
+        padding: 10px;
+        margin-top: 20px;
+        width: 150px;
+        max-height: 200px;
+      }
+      #namesWrapper {
+        float: left;
+        float: right;
+        width: 100%;
+        border: 1px #ccc solid;
+        border-radius: 10px;
+        background: #f4f4f4;
+        padding: 10px;
+        margin-left: 20px;
+      }
+      #messageForm input[type="text"] {
+        width: 400px;
+      }
+      input {
+        height: 30px;
+      }
+      h1 {
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container">
+      <div id="namesWrapper">
+        <h1 text-align="center">Chat App</h1>
+        <img
+          src="https://cdn.dribbble.com/users/108419/screenshots/448289/123.jpg"
+          height="30%"
+          width="100%"
+        />
+        <p>Create userName:</p>
+        <form id="usernameForm">
+          <input size="15" id="username" placeholder="Enetr Name" />
+          <input type="submit" value="submit" />
+        </form>
+        <div id="error"></div>
+      </div>
+
+      <div id="mainWrapper">
+        <div id="userWrapper">
+          <div id="users"></div>
+        </div>
+        <img
+          src="https://www.logolynx.com/images/logolynx/cd/cdd59a3d7288df84335a3c5a61b1652d.png"
+          height="100px"
+          width="100px"
+        />
+        <div id="chatWrapper">
+          <div id="chatWindow"></div>
+          <form id="messageForm">
+            <input id="emoji" type="button" value="😊" title="emoji" />
+            <label for="sendImage" class="imageLable">
+              <input type="button" value="⬛" />
+              <input id="sendImage" type="file" value="⬛" />
+            </label>
+            <input
+              size="15"
+              type="text"
+              id="message"
+              placeholder="Type Something...."
+            />
+            <input type="submit" value="Say It!" />
+          </form>
+        </div>
+      </div>
+    </div>
+    <script src="http://code.jquery.com/jquery-2.2.1.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      $(function () {
+        var socket = io.connect();
+        var $messageForm = $("#messageForm");
+        var $message = $("#message");
+        var $chat = $("#chatWindow");
+        var $usernameForm = $("#usernameForm");
+        var $users = $("#users");
+        var $username = $("#username");
+        var $error = $("#error");
+
+        $usernameForm.submit(function (e) {
+          e.preventDefault();
+          if ($username.val().trim() != "")
+            socket.emit("new user", $username.val(), function (data) {
+              if (data) {
+                $("#namesWrapper").hide();
+                $("#mainWrapper").show();
+              } else {
+                $error.html("username is already teckan");
+              }
+            });
+          $username.val("");
+        });
+
+        socket.on("usernames", function (data) {
+          var html = "";
+          for (var i = 0; i < data.length; i++) {
+            html += data[i] + "<br/>";
+          }
+          $users.html(html);
+        });
+
+        $messageForm.submit(function (e) {
+          e.preventDefault();
+          //$message.val();
+          if ($message.val().trim() != "")
+            socket.emit("send message", $message.val());
+          $message.val("");
+          $chat.animate({ scrollTop: $chat.prop("scrollHeight") }, 1000);
+        });
+
+        socket.on("new message", function (data) {
+          $chat.append("<b>" + data.user + ":</b>" + data.msg + "<br/>");
+          $chat.animate({ scrollTop: $chat.prop("scrollHeight") }, 1000);
+        });
+
+        socket.on("userJoin", function (data) {
+          $chat.append(data.msg + "<br/>");
+          $chat.animate({ scrollTop: $chat.prop("scrollHeight") }, 1000);
+        });
+
+        socket.on("userLeave", function (data) {
+          $chat.append(data.msg + "<br/>");
+          $chat.animate({ scrollTop: $chat.prop("scrollHeight") }, 1000);
+        });
+      });
+    </script>
+  </body>
+</html>
